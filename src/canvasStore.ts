@@ -241,3 +241,20 @@ export function duplicateNodes(ids: string[]) {
         };
     });
 }
+
+export function updateNodeProp(id: string, key: 'x' | 'y' | 'w' | 'h', value: any) {
+    const num = parseFloat(value);
+    if (isNaN(num)) return;
+    
+    canvasStore.update(s => ({
+        ...s,
+        nodes: s.nodes.map(n => {
+            if (n.id !== id) return n;
+            if (key === 'x') return { ...n, x: num };
+            if (key === 'y') return { ...n, y: num };
+            if (key === 'w') return { ...n, width: Math.max(10, num) };
+            if (key === 'h') return { ...n, height: Math.max(10, num) };
+            return n;
+        })
+    }));
+}

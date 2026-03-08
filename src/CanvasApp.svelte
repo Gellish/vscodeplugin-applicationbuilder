@@ -29,6 +29,7 @@
     import Text from './components/Text.svelte';
     import Form from './components/Form.svelte';
     import Footer from './components/Footer.svelte';
+    import PropertiesPanel from './PropertiesPanel.svelte';
 
     const componentMap: Record<string, any> = {
         Button,
@@ -62,6 +63,7 @@
     let resizeStartPointer = { x: 0, y: 0 };
     let contextMenu = { visible: false, x: 0, y: 0, nodeId: '' };
     let isDragOver = false;
+    let showProperties = true;
 
     let canvasEl: HTMLDivElement;
 
@@ -407,9 +409,9 @@
 
     // ─── Device Frames ───────────────────────────────────────────────
     const DEVICE_FRAMES = [
-        { id: "desktop", name: "Desktop", x: 100, y: 100, width: 1000, height: 800 },
-        { id: "tablet", name: "Tablet", x: 1200, y: 100, width: 768, height: 1024 },
-        { id: "mobile", name: "Mobile", x: 2068, y: 100, width: 375, height: 812 },
+        { id: "desktop", name: "Desktop", x: 100, y: 150, width: 1200, height: 900, resolution: "1200px" },
+        { id: "tablet", name: "Tablet", x: 1400, y: 150, width: 991, height: 1024, resolution: "991px" },
+        { id: "mobile", name: "Mobile", x: 2500, y: 150, width: 375, height: 812, resolution: "375px" },
     ];
 </script>
 
@@ -455,6 +457,17 @@
 
         <div class="toolbar-group">
             <span class="node-count">{$canvasStore.nodes.length} element{$canvasStore.nodes.length !== 1 ? 's' : ''}</span>
+        </div>
+
+        <div class="toolbar-spacer"></div>
+
+        <div class="toolbar-group">
+            <button class="tool-btn" onclick={() => showProperties = !showProperties} title="Toggle Properties" class:active={showProperties}>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zM7 10h10v2H7v-2zm0 4h10v2H7v-2z"/>
+                </svg>
+            </button>
+            <button class="save-btn">Save</button>
         </div>
     </div>
 
@@ -512,6 +525,11 @@
 
                     <!-- Resize handles (only when selected) -->
                     {#if selected}
+                        <div class="selection-overlay">
+                            <div class="selection-label">
+                                {node.type} • {Math.round(node.width)} × {Math.round(node.height)}
+                            </div>
+                        </div>
                         {#each HANDLE_KEYS as hk}
                             <!-- svelte-ignore a11y_no_static_element_interactions -->
                             <div
@@ -526,7 +544,15 @@
             <!-- Device Frames -->
             {#each DEVICE_FRAMES as frame (frame.id)}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="device-label" style="left: {frame.x}px; top: {frame.y - 26}px;">{frame.name}</div>
+                <div class="device-label-group" style="left: {frame.x + 8}px; top: {frame.y - 40}px;">
+                    <span class="device-icon">
+                        {#if frame.id === 'desktop'}<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 18H4v-1h16v1zm1-15v12H3V3h18zm-1 1H4v10h16V4z"/></svg>{/if}
+                        {#if frame.id === 'tablet'}<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 18H7V4h10v14zm0-16H7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>{/if}
+                        {#if frame.id === 'mobile'}<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17 19H7V5h10v14zm0-16H7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>{/if}
+                    </span>
+                    <span class="device-name">{frame.name}</span>
+                    <span class="device-resolution">{frame.resolution}</span>
+                </div>
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div class="device-frame" style="left: {frame.x}px; top: {frame.y}px; width: {frame.width}px; height: {frame.height}px;">
                     {#each $canvasStore.nodes.sort((a, b) => a.zIndex - b.zIndex) as node(node.id)}
@@ -578,70 +604,23 @@
 </div>
 
 <!-- Properties Panel (Secondary Sidebar) -->
-    <div class="properties-panel">
-        <div class="properties-header">
-            <span>Design</span>
+    {#if showProperties}
+        <div class="properties-container">
+            <PropertiesPanel />
         </div>
-        <div class="properties-body">
-            {#if $canvasStore.selectedIds.length === 0}
-                <div class="empty-properties">No selection</div>
-            {:else if $canvasStore.selectedIds.length === 1}
-                {@const node = $canvasStore.nodes.find(n => n.id === $canvasStore.selectedIds[0])}
-                {#if node}
-                    <div class="prop-group">
-                        <div class="prop-group-title">Layout</div>
-                        <div class="prop-row">
-                            <div class="prop-field">
-                                <label>X</label>
-                                <input type="number" value={Math.round(node.x)} onchange={(e) => updateNodeProp(node, 'x', e.currentTarget.value)} />
-                            </div>
-                            <div class="prop-field">
-                                <label>Y</label>
-                                <input type="number" value={Math.round(node.y)} onchange={(e) => updateNodeProp(node, 'y', e.currentTarget.value)} />
-                            </div>
-                        </div>
-                        <div class="prop-row">
-                            <div class="prop-field">
-                                <label>W</label>
-                                <input type="number" value={Math.round(node.width)} onchange={(e) => updateNodeProp(node, 'w', e.currentTarget.value)} />
-                            </div>
-                            <div class="prop-field">
-                                <label>H</label>
-                                <input type="number" value={Math.round(node.height)} onchange={(e) => updateNodeProp(node, 'h', e.currentTarget.value)} />
-                            </div>
-                        </div>
-                    </div>
-                    
-                    {#if Object.keys(node.props).length > 0}
-                        <div class="prop-group">
-                            <div class="prop-group-title">Content Properties</div>
-                            {#each Object.entries(node.props) as [key, value]}
-                                <div class="prop-row">
-                                    <div class="prop-field text-prop">
-                                        <label>{key}</label>
-                                        <input type="text" value={value} oninput={(e) => updateNodeContent(node.id, key, e.currentTarget.value)} />
-                                    </div>
-                                </div>
-                            {/each}
-                        </div>
-                    {/if}
-                {/if}
-            {:else}
-                <div class="mixed-properties">Multiple selected</div>
-            {/if}
-        </div>
-    </div>
+    {/if}
 </div>
 
 <style>
+    /* ─── Global ─────────────────────────────────────────── */
     :global(body) {
         margin: 0;
         padding: 0;
         overflow: hidden;
-        background: var(--vscode-editor-background, #1e1e1e);
-        color: var(--vscode-editor-foreground, #ccc);
+        background: #000;
+        color: #ddd;
         font-family: var(--vscode-font-family, system-ui, sans-serif);
-        font-size: var(--vscode-font-size, 13px);
+        font-size: 13px;
     }
     :global(*) {
         box-sizing: border-box;
@@ -660,30 +639,31 @@
         flex-direction: column;
         flex: 1;
         min-width: 0;
+        background: #0a0a0a;
     }
 
     /* ─── Toolbar ─────────────────────────────────────────── */
     .toolbar {
         display: flex;
         align-items: center;
-        gap: 4px;
-        padding: 6px 12px;
-        background: var(--vscode-titleBar-activeBackground, #2d2d2d);
-        border-bottom: 1px solid var(--vscode-panel-border, #393939);
+        gap: 8px;
+        padding: 0 16px;
+        background: #111;
+        border-bottom: 1px solid #222;
         z-index: 1000;
-        min-height: 40px;
+        height: 48px;
     }
 
     .toolbar-group {
         display: flex;
         align-items: center;
-        gap: 2px;
+        gap: 4px;
     }
 
     .toolbar-divider {
         width: 1px;
         height: 20px;
-        background: var(--vscode-panel-border, #444);
+        background: #333;
         margin: 0 8px;
     }
 
@@ -695,44 +675,50 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 32px;
-        height: 28px;
+        width: 36px;
+        height: 32px;
         border: 1px solid transparent;
-        border-radius: 4px;
+        border-radius: 6px;
         background: transparent;
-        color: var(--vscode-foreground, #ccc);
+        color: #888;
         cursor: pointer;
-        font-size: 16px;
-        transition: all 0.1s;
+        transition: all 0.2s;
     }
 
     .tool-btn:hover {
-        background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.08));
+        background: rgba(255, 255, 255, 0.05);
+        color: #fff;
     }
 
     .tool-btn.active {
-        background: var(--vscode-button-background, #0078d4);
-        color: var(--vscode-button-foreground, #fff);
-    }
-
-    .text-btn {
-        width: auto;
-        padding: 0 8px;
-        font-size: 11px;
+        background: #2b4b7a;
+        color: #fff;
     }
 
     .zoom-label {
         font-size: 11px;
+        font-weight: 600;
         min-width: 40px;
         text-align: center;
-        opacity: 0.7;
-        user-select: none;
+        color: #888;
     }
 
-    .node-count {
+    .save-btn {
+        background: #2b4b7a;
+        color: #fff;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 6px;
         font-size: 11px;
-        opacity: 0.5;
-        user-select: none;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .save-btn:hover {
+        background: #355ea0;
     }
 
     /* ─── Canvas Viewport ─────────────────────────────────── */
@@ -745,11 +731,6 @@
 
     .canvas-viewport.panning {
         cursor: grab;
-    }
-
-    .canvas-viewport.drag-over {
-        outline: 2px dashed #3b82f6;
-        outline-offset: -2px;
     }
 
     .canvas-transform {
@@ -769,8 +750,8 @@
         width: 200000px;
         height: 200000px;
         background-image:
-            radial-gradient(circle, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
-        background-size: 20px 20px;
+            radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 24px 24px;
         pointer-events: none;
     }
 
@@ -778,133 +759,86 @@
     .device-frame {
         position: absolute;
         background: #ffffff;
-        border: 1px solid var(--vscode-panel-border, #444);
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        pointer-events: auto; /* Allow interacting with child nodes */
-        overflow: hidden;
-    }
-
-    .device-label {
-        position: absolute;
-        top: -26px;
-        left: 0;
-        font-size: 14px;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--vscode-descriptionForeground, #888);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 0 10px 60px rgba(0, 0, 0, 0.6);
         pointer-events: auto;
+        overflow: hidden;
+        border-radius: 4px;
     }
 
-    /* ─── Properties Panel ────────────────────────────────── */
-    .properties-panel {
-        width: 240px;
-        flex-shrink: 0;
-        background: var(--vscode-sideBar-background, #252526);
-        border-left: 1px solid var(--vscode-panel-border, #393939);
-        display: flex;
-        flex-direction: column;
-    }
-
-    .properties-header {
-        height: 40px;
-        border-bottom: 1px solid var(--vscode-panel-border, #393939);
+    .device-label-group {
+        position: absolute;
         display: flex;
         align-items: center;
-        padding: 0 12px;
-        font-weight: 600;
-        font-size: 11px;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-    }
-
-    .properties-body {
-        flex: 1;
-        overflow-y: auto;
-        padding: 12px;
-    }
-
-    .empty-properties, .mixed-properties {
-        font-size: 12px;
-        opacity: 0.5;
-        text-align: center;
-        padding-top: 20px;
-    }
-
-    .prop-group {
-        margin-bottom: 16px;
-    }
-
-    .prop-group-title {
-        font-size: 11px;
-        font-weight: 600;
-        margin-bottom: 8px;
-        opacity: 0.8;
-    }
-
-    .prop-row {
-        display: flex;
         gap: 8px;
-        margin-bottom: 8px;
+        font-family: inherit;
+        pointer-events: none;
+        user-select: none;
+        background: rgba(30,30,30, 0.95);
+        padding: 5px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
     }
 
-    .prop-field {
+    .device-icon {
         display: flex;
         align-items: center;
-        background: var(--vscode-input-background, #3c3c3c);
-        border: 1px solid var(--vscode-input-border, transparent);
-        border-radius: 3px;
-        padding: 2px 6px;
-        flex: 1;
-    }
-
-    .prop-field label {
-        font-size: 10px;
         opacity: 0.6;
-        width: 16px;
-        user-select: none;
     }
 
-    .prop-field input {
-        background: transparent;
-        border: none;
-        color: var(--vscode-input-foreground, #ccc);
-        font-family: inherit;
-        font-size: 11px;
-        width: 100%;
-        outline: none;
+    .device-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
     }
 
-    .prop-field.text-prop {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 4px 6px;
+    .device-resolution {
+        font-size: 10px;
+        opacity: 0.4;
+        font-weight: 400;
     }
-    .prop-field.text-prop label {
+
+    /* ─── Selection Overlay ────────────────────────────────── */
+    .selection-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
-        margin-bottom: 4px;
-        text-transform: capitalize;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .selection-label {
+        position: absolute;
+        top: -24px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #2b4b7a;
+        color: #fff;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: 700;
+        white-space: nowrap;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     /* ─── Canvas Node ─────────────────────────────────────── */
     .canvas-node {
         position: absolute;
         pointer-events: auto;
-        border: 2px solid;
-        border-radius: 6px;
+        border: 2px solid transparent;
         cursor: move;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        transition: box-shadow 0.15s;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+        transition: border-color 0.1s;
     }
 
     .canvas-node:hover {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        border-color: rgba(59, 130, 246, 0.3);
     }
 
     .canvas-node.selected {
-        box-shadow: 0 0 0 1px #3b82f6, 0 4px 20px rgba(59, 130, 246, 0.3);
+        border-color: #2563eb;
     }
 
     /* ─── Resize Handles ──────────────────────────────────── */
@@ -932,7 +866,7 @@
     .drop-overlay {
         position: absolute;
         inset: 0;
-        background: rgba(59, 130, 246, 0.08);
+        background: rgba(59, 130, 246, 0.05);
         display: flex;
         align-items: center;
         justify-content: center;
@@ -945,76 +879,64 @@
         align-items: center;
         gap: 12px;
         padding: 16px 32px;
-        background: rgba(59, 130, 246, 0.15);
-        border: 2px dashed #3b82f6;
+        background: #1e1e1e;
+        border: 2px dashed #2b4b7a;
         border-radius: 12px;
         font-size: 16px;
         font-weight: 500;
-        color: #93c5fd;
+        color: #ddd;
     }
 
     .drop-icon {
         font-size: 24px;
         font-weight: bold;
+        color: #2b4b7a;
     }
 
-    /* ─── Empty State ─────────────────────────────────────── */
-    .empty-state {
-        position: absolute;
-        inset: 0;
+    /* ─── Properties Panel ────────────────────────────────── */
+    .properties-panel {
+        width: 300px;
+        flex-shrink: 0;
+        background: #111;
+        border-left: 1px solid #222;
         display: flex;
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        pointer-events: none;
-        user-select: none;
+        color: #ddd;
     }
 
-    .empty-icon {
-        font-size: 48px;
-        opacity: 0.5;
-    }
-
-    .empty-title {
-        font-size: 20px;
-        font-weight: 600;
-        opacity: 0.4;
-    }
-
-    .empty-desc {
-        font-size: 13px;
-        opacity: 0.3;
-    }
-
-    .empty-shortcuts {
+    .properties-header {
+        height: 48px;
+        border-bottom: 1px solid #222;
         display: flex;
-        gap: 16px;
-        margin-top: 12px;
-        font-size: 11px;
-        opacity: 0.25;
+        align-items: center;
+        padding: 0 12px;
     }
 
-    .empty-shortcuts kbd {
-        display: inline-block;
-        padding: 2px 6px;
-        background: rgba(255,255,255,0.1);
-        border-radius: 3px;
-        font-family: inherit;
+    .prop-section-header {
+        padding: 12px 14px;
         font-size: 10px;
-        margin-right: 4px;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: #444;
+        letter-spacing: 1px;
     }
 
-    /* ─── Context Menu ────────────────────────────────────── */
+    .empty-properties {
+        padding: 80px 20px;
+        text-align: center;
+        color: #444;
+        font-size: 12px;
+    }
+
     .context-menu {
         position: fixed;
         z-index: 10000;
-        background: var(--vscode-menu-background, #2d2d2d);
-        border: 1px solid var(--vscode-menu-border, #454545);
-        border-radius: 6px;
-        padding: 4px;
-        min-width: 180px;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 6px;
+        min-width: 200px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.8);
     }
 
     .ctx-item {
@@ -1022,33 +944,42 @@
         align-items: center;
         justify-content: space-between;
         width: 100%;
-        padding: 6px 12px;
+        padding: 8px 12px;
         border: none;
-        border-radius: 4px;
+        border-radius: 6px;
         background: transparent;
-        color: var(--vscode-menu-foreground, #ccc);
+        color: #ccc;
         font-size: 12px;
         cursor: pointer;
         font-family: inherit;
+        transition: background 0.1s;
     }
 
     .ctx-item:hover {
-        background: var(--vscode-list-hoverBackground, #3a3a3a);
+        background: #2b4b7a;
+        color: #fff;
     }
 
     .ctx-item.danger {
-        color: #f87171;
+        color: #ef4444;
+    }
+    .ctx-item.danger:hover {
+        background: #ef4444;
+        color: #fff;
     }
 
     .ctx-item kbd {
         font-size: 10px;
         opacity: 0.5;
         font-family: inherit;
+        background: rgba(255,255,255,0.05);
+        padding: 1px 4px;
+        border-radius: 4px;
     }
 
     .ctx-divider {
         height: 1px;
-        background: var(--vscode-menu-separatorBackground, #404040);
-        margin: 4px 8px;
+        background: #222;
+        margin: 6px 8px;
     }
 </style>

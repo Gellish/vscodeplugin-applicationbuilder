@@ -2,19 +2,30 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 
-// ─── Get all asset files we need to serve ────────────────────────────
+// ─── Logging ─────────────────────────────────────────────────────────
+
+const outputChannel = vscode.window.createOutputChannel('Application Builder');
+
+function log(message: string, data?: any) {
+	const timestamp = new Date().toLocaleTimeString();
+	outputChannel.appendLine(`[${timestamp}] ${message}`);
+	if (data) {
+		outputChannel.appendLine(JSON.stringify(data, null, 2));
+	}
+}
+
+// ─── Asset Helpers ───────────────────────────────────────────────────
 
 function getAssetUri(webview: vscode.Webview, extensionUri: vscode.Uri, ...segments: string[]): vscode.Uri {
 	return webview.asWebviewUri(vscode.Uri.joinPath(extensionUri, ...segments));
 }
 
-function getChunkName(extensionUri: vscode.Uri): string | null {
-	// Find any shared chunk files in dist/assets
+function findAssetFile(extensionUri: vscode.Uri, prefix: string, extension: string): string | null {
 	try {
 		const assetsDir = path.join(extensionUri.fsPath, 'dist', 'assets');
 		const files = fs.readdirSync(assetsDir);
-		const chunk = files.find(f => f.includes('-chunk') || (f.startsWith('legacy') && f.endsWith('.js')));
-		return chunk || null;
+		const found = files.find(f => f.startsWith(prefix) && f.endsWith(extension));
+		return found || null;
 	} catch {
 		return null;
 	}
@@ -23,13 +34,14 @@ function getChunkName(extensionUri: vscode.Uri): string | null {
 declare const __DEV__: boolean;
 
 function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri, name: string): string {
+	log(`Generating HTML for ${name} (Dev: ${__DEV__})`);
+
 	if (__DEV__) {
 		return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<!-- Allow connecting to local Vite dev server -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' http://localhost:5173; style-src 'unsafe-inline' http://localhost:5173; connect-src ws://localhost:5173 http://localhost:5173; img-src ${webview.cspSource} data: https:;">
 <style>html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;background:var(--vscode-editor-background,#1e1e1e);color:var(--vscode-foreground,#ccc);}</style>
 </head>
@@ -41,19 +53,14 @@ function getWebviewHtml(webview: vscode.Webview, extensionUri: vscode.Uri, name:
 </html>`;
 	}
 
-	const scriptUri = getAssetUri(webview, extensionUri, 'dist', 'assets', `${name}.js`);
-	const stylesUri = getAssetUri(webview, extensionUri, 'dist', 'assets', `${name}.css`);
+	const scriptFile = findAssetFile(extensionUri, name, '.js') || `${name}.js`;
+	const styleFile = findAssetFile(extensionUri, name, '.css') || `${name}.css`;
+	const scriptUri = getAssetUri(webview, extensionUri, 'dist', 'assets', scriptFile);
+	const stylesUri = getAssetUri(webview, extensionUri, 'dist', 'assets', styleFile);
 
-	// Build importmap for shared chunks
-	const chunkName = getChunkName(extensionUri);
-	const importMapEntries: string[] = [];
-	if (chunkName) {
-		const chunkUri = getAssetUri(webview, extensionUri, 'dist', 'assets', chunkName);
-		importMapEntries.push(`"./${chunkName}": "${chunkUri}"`);
-		importMapEntries.push(`"/${chunkName}": "${chunkUri}"`);
-	}
-	const importMap = importMapEntries.length > 0
-		? `<script type="importmap">{"imports":{${importMapEntries.join(',')}}}</script>`
+	const chunkFile = findAssetFile(extensionUri, 'legacy-chunk', '.js');
+	const importMap = chunkFile 
+		? `<script type="importmap">{"imports":{"./${chunkFile}": "${getAssetUri(webview, extensionUri, 'dist', 'assets', chunkFile)}"}}</script>`
 		: '';
 
 	return `<!DOCTYPE html>
@@ -73,95 +80,103 @@ ${importMap}
 </html>`;
 }
 
-// ─── Sidebar View Provider ───────────────────────────────────────────
+// ─── View Management ─────────────────────────────────────────────────
 
-class AppBuilderSidebarProvider implements vscode.WebviewViewProvider {
-	public static readonly viewType = 'appBuilder';
+interface WebviewInstance {
+	id: string;
+	postMessage: (msg: any) => void;
+}
 
-	private readonly _extensionUri: vscode.Uri;
-	private _onMessage?: (msg: any) => void;
-	private _view?: vscode.WebviewView;
+const activeViews = new Set<WebviewInstance>();
 
-	constructor(extensionUri: vscode.Uri) {
-		this._extensionUri = extensionUri;
-	}
-
-	public setMessageHandler(handler: (msg: any) => void) {
-		this._onMessage = handler;
-	}
-
-	public postMessage(msg: any) {
-		if (this._view) {
-			this._view.webview.postMessage(msg);
+function broadcast(message: any, excludeId?: string) {
+	log(`Broadcasting: ${message.command}`, message);
+	for (const view of activeViews) {
+		if (view.id !== excludeId) {
+			view.postMessage(message);
 		}
-	}
-
-	public resolveWebviewView(
-		webviewView: vscode.WebviewView,
-		_context: vscode.WebviewViewResolveContext,
-		_token: vscode.CancellationToken,
-	) {
-		this._view = webviewView;
-		webviewView.webview.options = {
-			enableScripts: true,
-			localResourceRoots: [this._extensionUri]
-		};
-		webviewView.webview.html = getWebviewHtml(webviewView.webview, this._extensionUri, 'sidebarMain');
-		webviewView.webview.onDidReceiveMessage((msg) => {
-			if (this._onMessage) this._onMessage(msg);
-		});
 	}
 }
 
-// ─── Canvas Panel (Editor area) ──────────────────────────────────────
+// ─── Providers ───────────────────────────────────────────────────────
 
-class CanvasPanel {
-	public static currentPanel: CanvasPanel | undefined;
-	public static readonly viewType = 'appBuilderCanvas';
-	public static sidebarProvider: AppBuilderSidebarProvider | undefined;
-
-	private readonly _panel: vscode.WebviewPanel;
+class AppBuilderViewProvider implements vscode.WebviewViewProvider {
 	private readonly _extensionUri: vscode.Uri;
-	private _disposables: vscode.Disposable[] = [];
+	private readonly _id: string;
+	private readonly _entryName: string;
 
-	public static createOrShow(extensionUri: vscode.Uri) {
-		if (CanvasPanel.currentPanel) {
-			CanvasPanel.currentPanel._panel.reveal(vscode.ViewColumn.One);
-			return;
-		}
-		const panel = vscode.window.createWebviewPanel(
-			CanvasPanel.viewType,
-			'🎨 Application Builder',
-			vscode.ViewColumn.One,
-			{
-				enableScripts: true,
-				retainContextWhenHidden: true,
-				localResourceRoots: [extensionUri]
-			}
-		);
-		CanvasPanel.currentPanel = new CanvasPanel(panel, extensionUri);
-		
-		panel.webview.onDidReceiveMessage(msg => {
-			if (msg.command === 'syncNodes' && CanvasPanel.sidebarProvider) {
-				CanvasPanel.sidebarProvider.postMessage(msg);
-			}
-		});
+	constructor(extensionUri: vscode.Uri, id: string, entryName: string) {
+		this._extensionUri = extensionUri;
+		this._id = id;
+		this._entryName = entryName;
 	}
 
-	public postMessage(msg: any) {
-		this._panel.webview.postMessage(msg);
+	public resolveWebviewView(webviewView: vscode.WebviewView) {
+		const instance: WebviewInstance = {
+			id: this._id,
+			postMessage: (msg: any) => webviewView.webview.postMessage(msg)
+		};
+		
+		activeViews.add(instance);
+		webviewView.onDidDispose(() => {
+			log(`View disposed: ${this._id}`);
+			activeViews.delete(instance);
+		});
+
+		webviewView.webview.options = { 
+			enableScripts: true, 
+			localResourceRoots: [this._extensionUri] 
+		};
+		webviewView.webview.html = getWebviewHtml(webviewView.webview, this._extensionUri, this._entryName);
+
+		webviewView.webview.onDidReceiveMessage(msg => handleIncomingMessage(msg, this._id));
+	}
+}
+
+class CanvasPanel {
+	private static _current: CanvasPanel | undefined;
+	private readonly _panel: vscode.WebviewPanel;
+	private _disposables: vscode.Disposable[] = [];
+
+	public static open(extensionUri: vscode.Uri) {
+		if (this._current) {
+			this._current._panel.reveal(vscode.ViewColumn.One);
+			return;
+		}
+
+		const panel = vscode.window.createWebviewPanel('appBuilderCanvas', '🎨 Application Builder', vscode.ViewColumn.One, {
+			enableScripts: true,
+			retainContextWhenHidden: true,
+			localResourceRoots: [extensionUri]
+		});
+
+		this._current = new CanvasPanel(panel, extensionUri);
+	}
+
+	public static post(msg: any) {
+		this._current?._panel.webview.postMessage(msg);
 	}
 
 	private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
 		this._panel = panel;
-		this._extensionUri = extensionUri;
-		this._panel.webview.html = getWebviewHtml(this._panel.webview, this._extensionUri, 'canvasMain');
-		this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+		const instance: WebviewInstance = {
+			id: 'canvas',
+			postMessage: (msg: any) => this._panel.webview.postMessage(msg)
+		};
+		
+		activeViews.add(instance);
+		this._panel.onDidDispose(() => {
+			log('Canvas panel disposed');
+			activeViews.delete(instance);
+			CanvasPanel._current = undefined;
+			this.dispose();
+		}, null, this._disposables);
+
+		this._panel.webview.html = getWebviewHtml(this._panel.webview, extensionUri, 'canvasMain');
+		this._panel.webview.onDidReceiveMessage(msg => handleIncomingMessage(msg, 'canvas'), null, this._disposables);
 	}
 
-	public dispose() {
-		CanvasPanel.currentPanel = undefined;
-		this._panel.dispose();
+	private dispose() {
 		while (this._disposables.length) {
 			const x = this._disposables.pop();
 			if (x) x.dispose();
@@ -169,36 +184,50 @@ class CanvasPanel {
 	}
 }
 
+// ─── Router ──────────────────────────────────────────────────────────
+
+function handleIncomingMessage(msg: any, sourceId: string) {
+	log(`Message from ${sourceId}: ${msg.command}`, msg);
+
+	switch (msg.command) {
+		case 'syncNodes':
+		case 'selectNode':
+		case 'addComponent':
+			// Broadcast to everyone else
+			broadcast(msg, sourceId);
+			
+			// If canvas is not open and we are adding a component, open it
+			if (msg.command === 'addComponent' && !CanvasPanel['_current']) {
+				vscode.commands.executeCommand('appBuilder.open');
+			}
+			break;
+		
+		case 'error':
+			vscode.window.showErrorMessage(`[AppBuilder] ${msg.message}`);
+			break;
+		
+		case 'log':
+			log(`[Client Log]: ${msg.message}`, msg.data);
+			break;
+	}
+}
+
 // ─── Activation ──────────────────────────────────────────────────────
 
 export function activate(context: vscode.ExtensionContext) {
-	const sidebarProvider = new AppBuilderSidebarProvider(context.extensionUri);
-	CanvasPanel.sidebarProvider = sidebarProvider;
-	
-	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(AppBuilderSidebarProvider.viewType, sidebarProvider)
-	);
-
-	sidebarProvider.setMessageHandler((msg) => {
-		if (msg.command === 'addComponent' || msg.command === 'selectNode') {
-			if (CanvasPanel.currentPanel) {
-				CanvasPanel.currentPanel.postMessage(msg);
-			} else {
-				if (msg.command === 'addComponent') {
-					CanvasPanel.createOrShow(context.extensionUri);
-					setTimeout(() => CanvasPanel.currentPanel?.postMessage(msg), 1000);
-				}
-			}
-		}
-	});
+	log('Application Builder active');
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('appBuilder.open', () => {
-			CanvasPanel.createOrShow(context.extensionUri);
-		})
+		vscode.window.registerWebviewViewProvider('appBuilder', new AppBuilderViewProvider(context.extensionUri, 'layers', 'sidebarMain')),
+		vscode.window.registerWebviewViewProvider('appBuilderProperties', new AppBuilderViewProvider(context.extensionUri, 'properties', 'propertiesMain'))
 	);
 
-	CanvasPanel.createOrShow(context.extensionUri);
+	context.subscriptions.push(
+		vscode.commands.registerCommand('appBuilder.open', () => CanvasPanel.open(context.extensionUri))
+	);
+
+	// Automatically open canvas on start
+	CanvasPanel.open(context.extensionUri);
 }
 
 export function deactivate() {}

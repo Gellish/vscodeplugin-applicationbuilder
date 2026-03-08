@@ -1,8 +1,4 @@
-import { mount } from 'svelte';
 import SidebarPanel from './SidebarPanel.svelte';
+import { initWebview } from './webEntry';
 
-const app = mount(SidebarPanel, {
-    target: document.getElementById('app')!,
-});
-
-export default app;
+export default initWebview(SidebarPanel);

@@ -15,8 +15,9 @@ export default defineConfig({
       },
       output: {
         entryFileNames: `assets/[name].js`,
-        chunkFileNames: `assets/[name]-chunk.js`,
-        assetFileNames: `assets/[name].[ext]`
+        chunkFileNames: `assets/[name]-chunk-[hash].js`,
+        assetFileNames: `assets/[name].[ext]`,
+        manualChunks: undefined,
       }
     }
   }

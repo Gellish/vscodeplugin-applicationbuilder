@@ -31,24 +31,18 @@
         {
             title: 'Layout',
             items: [
-                { type: 'Navbar', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>', label: 'Navbar' },
-                { type: 'Hero', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>', label: 'Hero' },
-                { type: 'Footer', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 15h18"/></svg>', label: 'Footer' },
+                { type: 'Navbar', icon: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="18" height="11" rx="2"/></svg>', label: 'Navbar' },
+                { type: 'Hero', icon: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h7"/></svg>', label: 'Hero' },
+                { type: 'Footer', icon: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="14" rx="2"/><rect x="3" y="17" width="18" height="4" rx="1"/></svg>', label: 'Footer' },
             ],
         },
         {
-            title: 'Basic',
+            title: 'Elements',
             items: [
-                { type: 'Button', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="6" rx="3"/></svg>', label: 'Button' },
-                { type: 'Text', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>', label: 'Text' },
-                { type: 'Card', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/></svg>', label: 'Card' },
-                { type: 'Form', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>', label: 'Form' },
-            ],
-        },
-        {
-            title: 'Media',
-            items: [
-                { type: 'Image', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>', label: 'Image' },
+                { type: 'Button', icon: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="10" rx="2"/><path d="M8 12h8"/></svg>', label: 'Button' },
+                { type: 'Text', icon: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>', label: 'Text' },
+                { type: 'Card', icon: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/></svg>', label: 'Card' },
+                { type: 'Image', icon: '<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>', label: 'Image' },
             ],
         },
     ];
@@ -106,11 +100,12 @@
                 {:else}
                     <!-- Fake structure defs -->
                     {#snippet fakeChild(type: string, depth: number, children: any[] = [])}
-                        <div class="tree-node fake-node" style="padding-left: {16 + depth * 12}px">
+                        <div class="tree-node fake-node" style="padding-left: {12 + depth * 14}px">
+                            <span class="tree-chevron"></span>
                             <span class="node-icon svg-wrapper">
-                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></svg>
+                                <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-opacity="0.5"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></svg>
                             </span>
-                            <span class="node-name" style="opacity:0.7">{type}</span>
+                            <span class="node-name" style="opacity:0.6">{type}</span>
                         </div>
                         {#each children as c}
                             {@render fakeChild(c.type, depth + 1, c.children || [])}
@@ -120,9 +115,12 @@
                     {#snippet treeNode(node: any, depth: number)}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
-                        <div class="tree-node" style="padding-left: {16 + depth * 12}px" class:selected={selectedIds.includes(node.id)} onclick={(e) => { e.stopPropagation(); handleNodeClick(node.id); }}>
-                            <span class="node-icon svg-wrapper">
-                                {@html groups.flatMap(g => g.items).find(i => i.type === node.type)?.icon || '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'}
+                        <div class="tree-node" style="padding-left: {12 + depth * 14}px" class:selected={selectedIds.includes(node.id)} onclick={(e) => { e.stopPropagation(); handleNodeClick(node.id); }}>
+                            <span class="tree-chevron" class:has-children={true}>
+                                <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" opacity="0.4"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                            </span>
+                            <span class="node-icon svg-wrapper main-icon">
+                                {@html groups.flatMap(g => g.items).find(i => i.type === node.type)?.icon || '<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'}
                             </span>
                             <span class="node-name">{node.type}</span>
                         </div>
@@ -161,7 +159,10 @@
                     {/snippet}
 
                     <!-- Group everything under a virtual "Page" node to match standard builders -->
-                    <div class="tree-node">
+                    <div class="tree-node root-node">
+                        <span class="tree-chevron has-children">
+                             <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor" opacity="0.4"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg>
+                        </span>
                         <span class="node-icon svg-wrapper"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
                         <span class="node-name">Page</span>
                     </div>
@@ -221,7 +222,7 @@
     .tab-btn.active {
         opacity: 1;
         border-bottom-color: var(--vscode-focusBorder, #007fd4);
-        color: var(--vscode-focusBorder, #007fd4);
+        color: #fff;
         font-weight: 600;
     }
 
@@ -229,49 +230,69 @@
         flex: 1;
         overflow-y: auto;
         padding-bottom: 20px;
+        background: #141414;
     }
 
-    /* ─── Navigator Tree ────────────────────────────────────────── */
+    /* ─── Layers Tree ────────────────────────────────────────── */
     .navigator-tree {
-        padding: 8px 0;
+        padding: 4px 0;
     }
 
     .empty-state {
-        padding: 20px;
+        padding: 40px 20px;
         text-align: center;
-        opacity: 0.5;
+        opacity: 0.4;
         font-size: 11px;
-        font-style: italic;
     }
 
     .tree-node {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 6px 16px;
+        gap: 6px;
+        padding: 4px 8px;
         cursor: pointer;
-        font-size: 12px;
-        border-left: 2px solid transparent;
+        font-size: 11px;
         transition: background 0.1s;
+        height: 28px;
+        user-select: none;
     }
 
     .tree-node:hover {
-        background: var(--vscode-list-hoverBackground, #2a2d2e);
+        background: rgba(255, 255, 255, 0.04);
     }
 
     .tree-node.selected {
-        background: var(--vscode-list-inactiveSelectionBackground, #37373d);
-        border-left-color: var(--vscode-focusBorder, #007fd4);
-        color: var(--vscode-list-activeSelectionForeground, #fff);
+        background: #2b4b7a;
+        color: #fff;
+    }
+
+    .tree-chevron {
+        width: 14px;
+        height: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .tree-node.fake-node .node-name {
+        font-style: italic;
     }
 
     .node-icon {
-        font-size: 14px;
-        opacity: 0.8;
+        display: flex;
+        align-items: center;
+        width: 16px;
+        opacity: 0.7;
+    }
+
+    .main-icon {
+        color: #8da6ff;
     }
 
     .node-name {
-        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* ─── Component Grid ────────────────────────────────────────── */

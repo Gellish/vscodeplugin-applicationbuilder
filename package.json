@@ -34,13 +34,14 @@
         {
           "type": "webview",
           "id": "appBuilder",
-          "name": "Application Builder Navigator",
+          "name": "Layers",
           "icon": "public/vite.svg"
         },
         {
           "type": "webview",
           "id": "appBuilderProperties",
-          "name": "Design Properties"
+          "name": "Properties",
+          "icon": "public/vite.svg"
         }
       ]
     },
