@@ -430,16 +430,7 @@
             <!-- Grid -->
             <div class="canvas-grid"></div>
 
-            <!-- Device Frames -->
-            {#each DEVICE_FRAMES as frame (frame.id)}
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="device-frame" style="left: {frame.x}px; top: {frame.y}px; width: {frame.width}px; height: {frame.height}px;">
-                    <div class="device-label">{frame.name}</div>
-                </div>
-            {/each}
-
-            <!-- Nodes -->
-            {#each $canvasStore.nodes.sort((a, b) => a.zIndex - b.zIndex) as node (node.id)}
+            {#snippet renderNode(node, offsetX, offsetY)}
                 {@const selected = $canvasStore.selectedIds.includes(node.id)}
                 {@const colors = getColor(node.type)}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -447,8 +438,8 @@
                     class="canvas-node"
                     class:selected
                     style="
-                        left: {node.x}px;
-                        top: {node.y}px;
+                        left: {node.x - offsetX}px;
+                        top: {node.y - offsetY}px;
                         width: {node.width}px;
                         height: {node.height}px;
                         z-index: {node.zIndex};
@@ -486,6 +477,30 @@
                         {/each}
                     {/if}
                 </div>
+            {/snippet}
+
+            <!-- Device Frames -->
+            {#each DEVICE_FRAMES as frame (frame.id)}
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="device-frame" style="left: {frame.x}px; top: {frame.y}px; width: {frame.width}px; height: {frame.height}px;">
+                    <div class="device-label">{frame.name}</div>
+                    
+                    {#each $canvasStore.nodes.sort((a, b) => a.zIndex - b.zIndex) as node(node.id)}
+                        {@const cx = node.x + node.width / 2}
+                        {#if cx >= frame.x && cx < frame.x + frame.width}
+                            {@render renderNode(node, frame.x, frame.y)}
+                        {/if}
+                    {/each}
+                </div>
+            {/each}
+
+            <!-- Nodes outside any frame -->
+            {#each $canvasStore.nodes.sort((a, b) => a.zIndex - b.zIndex) as node(node.id)}
+                {@const cx = node.x + node.width / 2}
+                {@const inFrame = DEVICE_FRAMES.find(f => cx >= f.x && cx < f.x + f.width)}
+                {#if !inFrame}
+                    {@render renderNode(node, 0, 0)}
+                {/if}
             {/each}
         </div>
 
