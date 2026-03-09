@@ -704,7 +704,7 @@
     /* ─── Device Frames ───────────────────────────────────── */
     .device-frame {
         position: absolute;
-        background: var(--vscode-editor-background, #1e1e1e);
+        background: #ffffff;
         border: 1px solid var(--vscode-panel-border, #444);
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         pointer-events: none;
