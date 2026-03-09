@@ -1,0 +1,61 @@
+{
+  "name": "vscodeplugin-applicationbuilder",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n vite,ext -c cyan,green \"vite\" \"npm run watch:extension\"",
+    "build": "npm run build:webview && npm run build:extension",
+    "build:webview": "vite build",
+    "build:extension": "esbuild ./src/extension.ts --bundle --outfile=./dist/extension.cjs --external:vscode --format=cjs --platform=node --define:__DEV__=false",
+    "watch:extension": "esbuild ./src/extension.ts --bundle --outfile=./dist/extension.cjs --external:vscode --format=cjs --platform=node --define:__DEV__=true --watch",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
+  },
+  "publisher": "antigravity",
+  "engines": {
+    "vscode": "^1.107.0"
+  },
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./dist/extension.cjs",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "appBuilderViewContainer",
+          "title": "Application Builder",
+          "icon": "public/vite.svg"
+        }
+      ]
+    },
+    "views": {
+      "appBuilderViewContainer": [
+        {
+          "type": "webview",
+          "id": "appBuilder",
+          "name": "Application Builder",
+          "icon": "public/vite.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "appBuilder.open",
+        "title": "Application Builder: Open"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.2.1",
+    "@tsconfig/svelte": "^5.0.6",
+    "@types/node": "^24.10.1",
+    "@types/vscode": "^1.107.0",
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.27.3",
+    "svelte": "^5.45.2",
+    "svelte-check": "^4.3.4",
+    "typescript": "~5.9.3",
+    "vite": "^7.3.1"
+  }
+}
