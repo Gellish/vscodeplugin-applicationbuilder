@@ -272,7 +272,22 @@
         
         const parentId = possibleParents.length > 0 ? possibleParents[0].id : undefined;
 
-        addNode(compType, pos.x, pos.y, parentId);
+        const cx = pos.x;
+        const cy = pos.y;
+        let finalW = undefined;
+        let finalX = cx;
+        
+        for (const frame of DEVICE_FRAMES) {
+            if (cx >= frame.x && cx <= frame.x + frame.width && cy >= frame.y && cy <= frame.y + frame.height) {
+                if (['Navbar', 'Hero', 'Footer'].includes(compType)) {
+                    finalW = frame.width;
+                    finalX = frame.x + finalW / 2;
+                }
+                break;
+            }
+        }
+
+        addNode(compType, finalX, cy, parentId, finalW);
     }
 
     // ─── Context menu ────────────────────────────────────────────────
@@ -327,7 +342,21 @@
                         cy = 100;
                     }
                 }
-                addNode(msg.type, cx, cy, parentId);
+                // Find if dropped in a frame to auto-fit
+                let finalW = undefined;
+                let finalH = undefined;
+                let finalX = cx;
+                let finalY = cy;
+                for (const frame of DEVICE_FRAMES) {
+                    if (cx >= frame.x && cx <= frame.x + frame.width && cy >= frame.y && cy <= frame.y + frame.height) {
+                        if (['Navbar', 'Hero', 'Footer'].includes(msg.type)) {
+                            finalW = frame.width;
+                            finalX = frame.x + finalW / 2;
+                        }
+                        break;
+                    }
+                }
+                addNode(msg.type, finalX, finalY, parentId, finalW, finalH);
             } else if (msg.command === 'selectNode' && msg.id) {
                 selectNode(msg.id, false);
             }
@@ -820,6 +849,7 @@
     /* ─── Canvas Node ─────────────────────────────────────── */
     .canvas-node {
         position: absolute;
+        pointer-events: auto;
         border: 2px solid;
         border-radius: 6px;
         cursor: move;

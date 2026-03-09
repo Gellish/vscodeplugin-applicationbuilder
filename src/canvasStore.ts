@@ -61,19 +61,21 @@ export const selectedNodes = derived(canvasStore, $s =>
 
 // ─── Actions ─────────────────────────────────────────────────────────
 
-export function addNode(type: string, x: number, y: number, parentId?: string): string {
+export function addNode(type: string, x: number, y: number, parentId?: string, overrideW?: number, overrideH?: number): string {
     const id = 'node_' + Math.random().toString(36).substring(2, 9);
     const size = DEFAULT_SIZES[type] || { width: 200, height: 120 };
+    const w = overrideW ?? size.width;
+    const h = overrideH ?? size.height;
 
     canvasStore.update(s => ({
         ...s,
         nodes: [...s.nodes, {
             id,
             type,
-            x: x - size.width / 2,
-            y: y - size.height / 2,
-            width: size.width,
-            height: size.height,
+            x: x - w / 2,
+            y: y - h / 2,
+            width: w,
+            height: h,
             zIndex: s.nextZIndex,
             props: {},
             parentId,
