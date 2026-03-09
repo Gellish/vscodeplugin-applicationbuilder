@@ -2,7 +2,7 @@
     // @ts-ignore — vscode API injected in webview
     const vscode = (window as any).acquireVsCodeApi?.() ?? null;
 
-    let activeTab: 'navigator' | 'components' = 'components';
+    let activeTab: 'layers' | 'components' = 'layers';
     let nodes: any[] = [];
     let selectedIds: string[] = [];
 
@@ -74,7 +74,7 @@
 
 <div class="sidebar-root">
     <div class="sidebar-header">
-        <button class="tab-btn" class:active={activeTab === 'navigator'} onclick={() => activeTab = 'navigator'}>Navigator</button>
+        <button class="tab-btn" class:active={activeTab === 'layers'} onclick={() => activeTab = 'layers'}>Layers</button>
         <button class="tab-btn" class:active={activeTab === 'components'} onclick={() => activeTab = 'components'}>Components</button>
     </div>
 
@@ -99,11 +99,24 @@
                     </div>
                 </div>
             {/each}
-        {:else if activeTab === 'navigator'}
+        {:else if activeTab === 'layers'}
             <div class="navigator-tree">
                 {#if nodes.length === 0}
                     <div class="empty-state">No elements on canvas</div>
                 {:else}
+                    <!-- Fake structure defs -->
+                    {#snippet fakeChild(type: string, depth: number, children: any[] = [])}
+                        <div class="tree-node fake-node" style="padding-left: {16 + depth * 12}px">
+                            <span class="node-icon svg-wrapper">
+                                <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></svg>
+                            </span>
+                            <span class="node-name" style="opacity:0.7">{type}</span>
+                        </div>
+                        {#each children as c}
+                            {@render fakeChild(c.type, depth + 1, c.children || [])}
+                        {/each}
+                    {/snippet}
+
                     {#snippet treeNode(node: any, depth: number)}
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -113,13 +126,47 @@
                             </span>
                             <span class="node-name">{node.type}</span>
                         </div>
+                        
+                        {#if node.type === 'Navbar'}
+                            {@render fakeChild('Header', depth + 1, [
+                                { type: 'Container', children: [
+                                    { type: 'Wrapper', children: [
+                                        { type: 'Brand (Text)' },
+                                        { type: 'Navigation' }
+                                    ]}
+                                ]}
+                            ])}
+                        {/if}
+                        {#if node.type === 'Hero'}
+                            {@render fakeChild('Section', depth + 1, [
+                                { type: 'Container', children: [
+                                    { type: 'Flex', children: [
+                                        { type: 'Heading (H1)' },
+                                        { type: 'Paragraph (p)' },
+                                        { type: 'Button Group' }
+                                    ]}
+                                ]}
+                            ])}
+                        {/if}
+                        {#if node.type === 'Card'}
+                            {@render fakeChild('div.card', depth + 1, [
+                                { type: 'div.card-header' },
+                                { type: 'div.card-body' }
+                            ])}
+                        {/if}
+
                         {#each nodes.filter(n => n.parentId === node.id) as child}
                             {@render treeNode(child, depth + 1)}
                         {/each}
                     {/snippet}
 
+                    <!-- Group everything under a virtual "Page" node to match standard builders -->
+                    <div class="tree-node">
+                        <span class="node-icon svg-wrapper"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                        <span class="node-name">Page</span>
+                    </div>
                     {#each nodes.filter(n => !n.parentId) as node}
-                        {@render treeNode(node, 0)}
+                        {@render treeNode(node, 1)}
                     {/each}
                 {/if}
             </div>

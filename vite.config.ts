@@ -11,6 +11,7 @@ export default defineConfig({
       input: {
         sidebarMain: resolve(__dirname, 'sidebar.html'),
         canvasMain: resolve(__dirname, 'canvas.html'),
+        propertiesMain: resolve(__dirname, 'properties.html'),
       },
       output: {
         entryFileNames: `assets/[name].js`,

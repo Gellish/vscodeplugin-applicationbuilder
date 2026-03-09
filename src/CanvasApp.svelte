@@ -1,3 +1,4 @@
+```html
 <script lang="ts">
     import {
         canvasStore,
@@ -13,9 +14,11 @@
         bringToFront,
         sendToBack,
         duplicateNodes,
+        DEFAULT_SIZES,
+        updateNodeContent,
         type CanvasNode,
         type ActiveTool,
-        updateNodeContent,
+        type CanvasState
     } from './canvasStore';
 
     import Button from './components/Button.svelte';
@@ -75,7 +78,7 @@
     };
 
     function getColor(type: string) {
-        return COMPONENT_COLORS[type] || { bg: '#2a2a2a', border: '#555', icon: '📦' };
+        return { bg: 'transparent', border: 'transparent', icon: '' };
     }
 
     // ─── Coordinate helpers ──────────────────────────────────────────
@@ -243,6 +246,51 @@
         if (e.code === 'Space') spaceHeld = false;
     }
 
+    // ─── Auto-layout calculation ─────────────────────────────────────
+    function calculatePlacement(state: CanvasState, cx: number, cy: number, compType: string) {
+        let finalW = undefined;
+        let finalH = undefined;
+        let finalX = cx; // center x by default
+        let finalY = cy; // center y by default
+
+        for (const frame of DEVICE_FRAMES) {
+            // Check if dropped inside this frame
+            if (cx >= frame.x && cx <= frame.x + frame.width && cy >= frame.y && cy <= frame.y + frame.height) {
+                // Find existing nodes mathematically contained in this frame
+                const nodesInFrame = state.nodes.filter(n => {
+                    const n_cx = n.x + n.width / 2;
+                    return n_cx >= frame.x && n_cx <= frame.x + frame.width;
+                }).sort((a, b) => (a.y + a.height) - (b.y + b.height)); // sort by bottom edge
+
+                const size = DEFAULT_SIZES[compType] || { width: 200, height: 120 };
+                let h = size.height;
+                let w = size.width;
+
+                // Snap blocks to be full-width
+                if (['Navbar', 'Hero', 'Footer', 'Card'].includes(compType)) {
+                    finalW = frame.width;
+                    w = finalW;
+                    finalX = frame.x + finalW / 2; // Snap center to frame center
+                } else {
+                    finalX = frame.x + w / 2; // Snap smaller elements to left 
+                }
+                
+                // Stack vertically to prevent overlap
+                let newTopY = frame.y;
+                if (nodesInFrame.length > 0) {
+                    const lastNode = nodesInFrame[nodesInFrame.length - 1];
+                    newTopY = lastNode.y + lastNode.height;
+                }
+                
+                // addNode takes the CENTER point, so the finalY passed to it should be the center
+                finalY = newTopY + h / 2;
+                break;
+            }
+        }
+
+        return { finalX, finalY, finalW, finalH };
+    }
+
     // ─── Drag & drop from sidebar ────────────────────────────────────
     function handleDragOver(e: DragEvent) {
         if (e.dataTransfer?.types.includes('application/x-component-type')) {
@@ -266,29 +314,15 @@
         const pos = screenToCanvas(e.clientX, e.clientY, state);
 
         // Find potential parent (highest z-index node containing this point)
-        const possibleParents = state.nodes.filter(n => 
+        const possibleParents = state.nodes.filter((n: CanvasNode) => 
             pos.x >= n.x && pos.x <= n.x + n.width &&
             pos.y >= n.y && pos.y <= n.y + n.height
-        ).sort((a, b) => b.zIndex - a.zIndex);
+        ).sort((a: CanvasNode, b: CanvasNode) => b.zIndex - a.zIndex);
         
         const parentId = possibleParents.length > 0 ? possibleParents[0].id : undefined;
 
-        const cx = pos.x;
-        const cy = pos.y;
-        let finalW = undefined;
-        let finalX = cx;
-        
-        for (const frame of DEVICE_FRAMES) {
-            if (cx >= frame.x && cx <= frame.x + frame.width && cy >= frame.y && cy <= frame.y + frame.height) {
-                if (['Navbar', 'Hero', 'Footer'].includes(compType)) {
-                    finalW = frame.width;
-                    finalX = frame.x + finalW / 2;
-                }
-                break;
-            }
-        }
-
-        addNode(compType, finalX, cy, parentId, finalW);
+        const { finalX, finalY, finalW } = calculatePlacement(state, pos.x, pos.y, compType);
+        addNode(compType, finalX, finalY, parentId, finalW);
     }
 
     // ─── Context menu ────────────────────────────────────────────────
@@ -343,20 +377,7 @@
                         cy = 100;
                     }
                 }
-                // Find if dropped in a frame to auto-fit
-                let finalW = undefined;
-                let finalH = undefined;
-                let finalX = cx;
-                let finalY = cy;
-                for (const frame of DEVICE_FRAMES) {
-                    if (cx >= frame.x && cx <= frame.x + frame.width && cy >= frame.y && cy <= frame.y + frame.height) {
-                        if (['Navbar', 'Hero', 'Footer'].includes(msg.type)) {
-                            finalW = frame.width;
-                            finalX = frame.x + finalW / 2;
-                        }
-                        break;
-                    }
-                }
+                const { finalX, finalY, finalW, finalH } = calculatePlacement(state, cx, cy, msg.type);
                 addNode(msg.type, finalX, finalY, parentId, finalW, finalH);
             } else if (msg.command === 'selectNode' && msg.id) {
                 selectNode(msg.id, false);
@@ -478,22 +499,15 @@
                     "
                     onpointerdown={(e) => handleNodePointerDown(e, node)}
                 >
-                    <div class="node-header" style="border-bottom-color: {colors.border}">
-                        <span class="node-icon">{colors.icon}</span>
-                        <span class="node-type">{node.type}</span>
-                        <span class="node-size">{Math.round(node.width)}×{Math.round(node.height)}</span>
-                    </div>
-                    <div class="node-body">
-                        <div class="node-preview" style="border-color: {colors.border}30">
-                            <!-- Dynamically render the real Svelte component -->
-                            {#if componentMap[node.type]}
-                                <svelte:component this={componentMap[node.type]} {...node.props} />
-                            {:else}
-                                <div class="preview-generic">
-                                    <span style="opacity:0.3">{node.type}</span>
-                                </div>
-                            {/if}
-                        </div>
+                    <!-- Dynamically render the real Svelte component -->
+                    <div class="component-wrapper">
+                        {#if componentMap[node.type]}
+                            <svelte:component this={componentMap[node.type]} {...node.props} />
+                        {:else}
+                            <div class="preview-generic">
+                                <span style="opacity:0.3">{node.type}</span>
+                            </div>
+                        {/if}
                     </div>
 
                     <!-- Resize handles (only when selected) -->
@@ -801,7 +815,6 @@
         font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.8px;
-        opacity: 0.8;
     }
 
     .properties-body {
@@ -894,61 +907,16 @@
         box-shadow: 0 0 0 1px #3b82f6, 0 4px 20px rgba(59, 130, 246, 0.3);
     }
 
-    .node-header {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 10px;
-        border-bottom: 1px solid;
-        font-size: 11px;
-        font-weight: 600;
-        user-select: none;
-        flex-shrink: 0;
-    }
-
-    .node-icon {
-        font-size: 12px;
-    }
-
-    .node-type {
-        flex: 1;
-    }
-
-    .node-size {
-        font-size: 9px;
-        opacity: 0.5;
-        font-weight: 400;
-    }
-
-    .node-body {
-        flex: 1;
-        padding: 10px;
-        display: flex;
-        overflow: hidden;
-    }
-
-    .node-preview {
-        flex: 1;
-        border: 1px dashed;
-        border-radius: 4px;
-        padding: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
-    }
-
-
-
     /* ─── Resize Handles ──────────────────────────────────── */
     .resize-handle {
         position: absolute;
         width: 10px;
         height: 10px;
-        background: #3b82f6;
-        border: 2px solid #1d4ed8;
-        border-radius: 2px;
+        background: #fff;
+        border: 2px solid #2563eb;
+        border-radius: 50%;
         z-index: 10;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     }
 
     .handle-tl { top: -5px; left: -5px; cursor: nwse-resize; }

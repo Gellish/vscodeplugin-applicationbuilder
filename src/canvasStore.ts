@@ -28,7 +28,7 @@ export interface CanvasState {
 
 // ─── Default Sizes per Component Type ────────────────────────────────
 
-const DEFAULT_SIZES: Record<string, { width: number; height: number }> = {
+export const DEFAULT_SIZES: Record<string, { width: number; height: number }> = {
     Hero:    { width: 800, height: 400 },
     Navbar:  { width: 800, height: 64 },
     Button:  { width: 160, height: 48 },

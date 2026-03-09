@@ -1,7 +1,7 @@
 {
   "name": "vscodeplugin-applicationbuilder",
   "displayName": "Application Builder",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "type": "module",
   "scripts": {
     "dev": "concurrently -n vite,ext -c cyan,green \"vite\" \"npm run watch:extension\"",
@@ -34,8 +34,13 @@
         {
           "type": "webview",
           "id": "appBuilder",
-          "name": "Application Builder",
+          "name": "Application Builder Navigator",
           "icon": "public/vite.svg"
+        },
+        {
+          "type": "webview",
+          "id": "appBuilderProperties",
+          "name": "Design Properties"
         }
       ]
     },
