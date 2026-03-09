@@ -462,6 +462,22 @@ vsce package --no-dependencies --out app-builder.vsix
 
 ---
 
+### UI changes not updating in IDE (Version Caching Issue)
+
+Even if you rebuild the `.vsix` with `--force`, Antigravity IDE and VS Code aggressively cache extension assets based on the version number. If you modify the Svelte UI but don't bump the version, you might still see the old UI.
+
+**Fix:** Open `package.json`, increment the `"version"` (e.g., from `1.0.0` to `1.0.1`), then rebuild and install the VSIX.
+
+---
+
+### Components overlapping device frames or becoming un-draggable
+
+This occurs if elements are moved into a container with `overflow: hidden` but loose their global pointer events, or if dragging destroys and re-creates the DOM element mid-drag.
+
+**Fix:** Components are rendered globally within their respective `device-frame` blocks but use absolute positioning. `.device-frame` and `.canvas-node` must both have `pointer-events: auto` so that the drag events are not stolen by the background canvas. The application builder now automatically auto-fits layout components (Navbar, Hero, Footer) to snap perfectly into the device frames.
+
+---
+
 ### Canvas panel doesn't open
 
 The canvas opens automatically on activation. If it doesn't:
