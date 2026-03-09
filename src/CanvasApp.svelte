@@ -15,6 +15,7 @@
         duplicateNodes,
         type CanvasNode,
         type ActiveTool,
+        updateNodeContent,
     } from './canvasStore';
 
     import Button from './components/Button.svelte';
@@ -459,7 +460,7 @@
             <!-- Grid -->
             <div class="canvas-grid"></div>
 
-            {#snippet renderNode(node, offsetX, offsetY)}
+            {#snippet renderNode(node: any, offsetX: number, offsetY: number)}
                 {@const selected = $canvasStore.selectedIds.includes(node.id)}
                 {@const colors = getColor(node.type)}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -486,7 +487,7 @@
                         <div class="node-preview" style="border-color: {colors.border}30">
                             <!-- Dynamically render the real Svelte component -->
                             {#if componentMap[node.type]}
-                                <svelte:component this={componentMap[node.type]} />
+                                <svelte:component this={componentMap[node.type]} {...node.props} />
                             {:else}
                                 <div class="preview-generic">
                                     <span style="opacity:0.3">{node.type}</span>
@@ -511,9 +512,9 @@
             <!-- Device Frames -->
             {#each DEVICE_FRAMES as frame (frame.id)}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="device-label" style="left: {frame.x}px; top: {frame.y - 26}px;">{frame.name}</div>
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
                 <div class="device-frame" style="left: {frame.x}px; top: {frame.y}px; width: {frame.width}px; height: {frame.height}px;">
-                    <div class="device-label">{frame.name}</div>
-                    
                     {#each $canvasStore.nodes.sort((a, b) => a.zIndex - b.zIndex) as node(node.id)}
                         {@const cx = node.x + node.width / 2}
                         {#if cx >= frame.x && cx < frame.x + frame.width}
@@ -596,6 +597,20 @@
                             </div>
                         </div>
                     </div>
+                    
+                    {#if Object.keys(node.props).length > 0}
+                        <div class="prop-group">
+                            <div class="prop-group-title">Content Properties</div>
+                            {#each Object.entries(node.props) as [key, value]}
+                                <div class="prop-row">
+                                    <div class="prop-field text-prop">
+                                        <label>{key}</label>
+                                        <input type="text" value={value} oninput={(e) => updateNodeContent(node.id, key, e.currentTarget.value)} />
+                                    </div>
+                                </div>
+                            {/each}
+                        </div>
+                    {/if}
                 {/if}
             {:else}
                 <div class="mixed-properties">Multiple selected</div>
@@ -751,7 +766,7 @@
         background: #ffffff;
         border: 1px solid var(--vscode-panel-border, #444);
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        pointer-events: none;
+        pointer-events: auto; /* Allow interacting with child nodes */
         overflow: hidden;
     }
 
@@ -844,6 +859,17 @@
         font-size: 11px;
         width: 100%;
         outline: none;
+    }
+
+    .prop-field.text-prop {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 4px 6px;
+    }
+    .prop-field.text-prop label {
+        width: 100%;
+        margin-bottom: 4px;
+        text-transform: capitalize;
     }
 
     /* ─── Canvas Node ─────────────────────────────────────── */

@@ -67,6 +67,24 @@ export function addNode(type: string, x: number, y: number, parentId?: string, o
     const w = overrideW ?? size.width;
     const h = overrideH ?? size.height;
 
+    const initialProps: Record<string, any> = {};
+    if (type === 'Text') initialProps.content = 'Your text here';
+    if (type === 'Button') {
+        initialProps.text = 'Click Me';
+        initialProps.variant = 'primary';
+    }
+    if (type === 'Navbar') initialProps.logoText = 'Brand';
+    if (type === 'Hero') {
+        initialProps.title = 'Welcome to our platform';
+        initialProps.subtitle = 'Start building amazing apps today.';
+        initialProps.primaryButtonText = 'Get Started';
+        initialProps.secondaryButtonText = 'Learn More';
+    }
+    if (type === 'Card') {
+        initialProps.title = 'Card Title';
+        initialProps.body = 'This is a nice card body content.';
+    }
+
     canvasStore.update(s => ({
         ...s,
         nodes: [...s.nodes, {
@@ -77,7 +95,7 @@ export function addNode(type: string, x: number, y: number, parentId?: string, o
             width: w,
             height: h,
             zIndex: s.nextZIndex,
-            props: {},
+            props: initialProps,
             parentId,
         }],
         nextZIndex: s.nextZIndex + 1,
@@ -133,6 +151,15 @@ export function resizeNode(id: string, x: number, y: number, width: number, heig
         ...s,
         nodes: s.nodes.map(n =>
             n.id === id ? { ...n, x, y, width: Math.max(40, width), height: Math.max(24, height) } : n
+        ),
+    }));
+}
+
+export function updateNodeContent(id: string, propKey: string, propValue: any) {
+    canvasStore.update(s => ({
+        ...s,
+        nodes: s.nodes.map(n =>
+            n.id === id ? { ...n, props: { ...n.props, [propKey]: propValue } } : n
         ),
     }));
 }

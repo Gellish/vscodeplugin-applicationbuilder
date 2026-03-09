@@ -31,24 +31,24 @@
         {
             title: 'Layout',
             items: [
-                { type: 'Navbar', icon: '☰', label: 'Navbar' },
-                { type: 'Hero', icon: '🏠', label: 'Hero' },
-                { type: 'Footer', icon: '▬', label: 'Footer' },
+                { type: 'Navbar', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>', label: 'Navbar' },
+                { type: 'Hero', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>', label: 'Hero' },
+                { type: 'Footer', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M3 15h18"/></svg>', label: 'Footer' },
             ],
         },
         {
             title: 'Basic',
             items: [
-                { type: 'Button', icon: '🔘', label: 'Button' },
-                { type: 'Text', icon: '📝', label: 'Text' },
-                { type: 'Card', icon: '🎴', label: 'Card' },
-                { type: 'Form', icon: '📋', label: 'Form' },
+                { type: 'Button', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="6" rx="3"/></svg>', label: 'Button' },
+                { type: 'Text', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>', label: 'Text' },
+                { type: 'Card', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/></svg>', label: 'Card' },
+                { type: 'Form', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2" ry="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/></svg>', label: 'Form' },
             ],
         },
         {
             title: 'Media',
             items: [
-                { type: 'Image', icon: '🖼️', label: 'Image' },
+                { type: 'Image', icon: '<svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>', label: 'Image' },
             ],
         },
     ];
@@ -92,7 +92,7 @@
                                 onclick={() => handleClick(comp.type)}
                                 title="Drag to canvas or click to add"
                             >
-                                <span class="card-icon">{comp.icon}</span>
+                                <span class="card-icon">{@html comp.icon}</span>
                                 <span class="card-label">{comp.label}</span>
                             </button>
                         {/each}
@@ -108,8 +108,8 @@
                         <!-- svelte-ignore a11y_click_events_have_key_events -->
                         <!-- svelte-ignore a11y_no_static_element_interactions -->
                         <div class="tree-node" style="padding-left: {16 + depth * 12}px" class:selected={selectedIds.includes(node.id)} onclick={(e) => { e.stopPropagation(); handleNodeClick(node.id); }}>
-                            <span class="node-icon">
-                                {groups.flatMap(g => g.items).find(i => i.type === node.type)?.icon || '📦'}
+                            <span class="node-icon svg-wrapper">
+                                {@html groups.flatMap(g => g.items).find(i => i.type === node.type)?.icon || '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>'}
                             </span>
                             <span class="node-name">{node.type}</span>
                         </div>
@@ -124,10 +124,6 @@
                 {/if}
             </div>
         {/if}
-    </div>
-
-    <div class="sidebar-footer">
-        <span class="hint">{activeTab === 'components' ? 'Drag onto canvas or click to add' : 'Layer hierarchy'}</span>
     </div>
 </div>
 
@@ -256,33 +252,37 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 6px;
-        padding: 12px 6px;
-        background: var(--vscode-button-secondaryBackground, #2d2d2d);
-        border: 1px solid transparent;
-        border-radius: 6px;
-        color: var(--vscode-button-secondaryForeground, #ccc);
+        gap: 8px;
+        padding: 16px 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+        color: var(--vscode-foreground, #ececec);
         cursor: grab;
-        transition: all 0.15s ease;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         font-family: inherit;
         font-size: inherit;
     }
 
     .component-card:hover {
-        background: var(--vscode-list-hoverBackground, #383838);
-        border-color: var(--vscode-focusBorder, #007fd4);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.15);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
     .component-card:active {
         cursor: grabbing;
-        transform: scale(0.96);
+        transform: translateY(0);
+        background: rgba(255, 255, 255, 0.05);
     }
 
     .card-icon {
-        font-size: 20px;
-        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--vscode-foreground, #fff);
+        opacity: 0.9;
     }
 
     .card-label {
@@ -291,15 +291,5 @@
         opacity: 0.8;
     }
 
-    .sidebar-footer {
-        margin-top: auto;
-        padding: 12px 14px;
-        border-top: 1px solid var(--vscode-panel-border, #333);
-    }
 
-    .hint {
-        font-size: 10px;
-        opacity: 0.4;
-        font-style: italic;
-    }
 </style>
