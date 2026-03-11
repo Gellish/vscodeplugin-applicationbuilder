@@ -1,4 +1,3 @@
-```html
 <script lang="ts">
     import {
         canvasStore,
@@ -30,6 +29,7 @@
     import Form from './components/Form.svelte';
     import Footer from './components/Footer.svelte';
     import PropertiesPanel from './PropertiesPanel.svelte';
+    import { getVsCodeApi } from './lib/vscode';
 
     const componentMap: Record<string, any> = {
         Button,
@@ -42,13 +42,14 @@
         Footer
     };
 
-    // @ts-ignore — vscode API injected in webview
-    const vscode = (window as any).acquireVsCodeApi?.() ?? null;
+    const vscode = getVsCodeApi();
 
     // Send state to extension host whenever nodes change
-    $: if (vscode && $canvasStore) {
-        vscode.postMessage({ command: 'syncNodes', nodes: $canvasStore.nodes, selectedIds: $canvasStore.selectedIds });
-    }
+    $effect(() => {
+        if (vscode && $canvasStore) {
+            vscode.postMessage({ command: 'syncNodes', nodes: $canvasStore.nodes, selectedIds: $canvasStore.selectedIds });
+        }
+    });
 
     // ─── Local interaction state ─────────────────────────────────────
     let isPanning = false;

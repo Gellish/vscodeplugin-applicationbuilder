@@ -1,5 +1,8 @@
 <script lang="ts">
     import { canvasStore, updateNodeContent, updateNodeProp, duplicateNodes, removeNodes } from './canvasStore';
+    import { getVsCodeApi } from './lib/vscode';
+
+    const vscode = getVsCodeApi();
 
     let { standalone = false } = $props();
 
